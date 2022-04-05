@@ -169,8 +169,27 @@ def send_reliable(cs, filedata, receiver_binding, win_size):
 
     # TODO: This is where you will make your changes. You
     # will not need to change any other parts of this file.
+    cs.settimeout(RTO)
+    max_retries, retries = 2, -1
     while win_left_edge < INIT_SEQNO + content_len:
-        win_left_edge = transmit_one()
+        try:
+            # MAX_CHUNK_SIZE only defined in reciever.py
+            # Need to make sure both sizes correlate
+            # TODO remove max_retries for submission
+            (data, sender) = cs.recvfrom(100)
+            print("data size in bytes: {}".format(len(data)))
+            msg = Msg.deserialize(data)
+            print("Received    {}".format(str(msg)))
+            win_left_edge = msg.ack
+            retries = -1
+        except socket.timeout:
+            retries += 1
+            pass
+        if retries + 1 > max_retries:
+            print("Max retries exceeded.")
+            exit(-1)
+        if win_left_edge < INIT_SEQNO + content_len:
+            transmit_one()
 
 if __name__ == "__main__":
     args = parse_args()
