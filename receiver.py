@@ -71,7 +71,7 @@ class Msg:
                        int(parts[1]),
                        '|'.join(parts[3:])[1:])
         else:
-            print("[R] Error in deserializing into Msg object.")
+            print("[R]: Error in deserializing into Msg object.")
             exit(-1)
 
 ## Helper methods.
@@ -125,6 +125,9 @@ def set_loss_params(args):
     if pkt_losstype == 'everyn':
         pkt_eN_N = pkt_lossparam
     elif pkt_losstype == 'alteveryn':
+        if (pkt_lossparam < 4):
+            print("[R]: Error: pktlossN must be >= 4 for alteveryn")
+            exit(-1)
         pkt_aeM_M = pkt_lossparam
     elif pkt_losstype == 'iid':
         pkt_iid_N = pkt_lossparam
@@ -136,6 +139,9 @@ def set_loss_params(args):
     if ack_losstype == 'everyn':
         ack_eN_N = ack_lossparam
     elif ack_losstype == 'alteveryn':
+        if (ack_lossparam < 4):
+            print("[R]: Error: acklossN must be >= 4 for alteveryn")
+            exit(-1)
         ack_aeM_M = ack_lossparam
     elif ack_losstype == 'iid':
         ack_iid_N = ack_lossparam
@@ -163,16 +169,16 @@ def ack_everyN():
     return ack_counter_eN == (ack_eN_N - 1)
 
 def pkt_alternateEveryM():
-    global pkt_counter_aEM
-    pkt_counter_aEM = (pkt_counter_aEM + 1) % pkt_aeM_M
-    return pkt_counter_aeM in [pkt_aEM_M - 1,
-                               pkt_aEM_M - 3]
+    global pkt_counter_aeM
+    pkt_counter_aeM = (pkt_counter_aeM + 1) % pkt_aeM_M
+    return pkt_counter_aeM in [pkt_aeM_M - 1,
+                               pkt_aeM_M - 3]
 
 def ack_alternateEveryM():
-    global ack_counter_aEM
-    ack_counter_aEM = (ack_counter_aEM + 1) % ack_aeM_M
-    return ack_counter_aeM in [ack_aEM_M - 1,
-                               ack_aEM_M - 3]
+    global ack_counter_aeM
+    ack_counter_aeM = (ack_counter_aeM + 1) % ack_aeM_M
+    return ack_counter_aeM in [ack_aeM_M - 1,
+                               ack_aeM_M - 3]
 
 def pkt_iid():
     return random.randint(1, pkt_iid_N) == 1
@@ -215,22 +221,22 @@ def lossy_sendto(ss, msg, sender_addr):
     loss = ack_loss_verdict()
     if not loss:
         ss.sendto(msg.serialize(), sender_addr)
-        print ("[R] Transmitted {}".format(str(msg)))
+        print("[R]: Transmitted {}".format(str(msg)))
         
 ### Init socket
 def init_socket(local_receiver_port):
     try:
         ss = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        print("[R]: Receiver socket created")
+        print("[R]: : Receiver socket created")
     except socket.error as err:
-        print('[R] socket open error: {}\n'.format(err))
+        print('[R]: socket open error: {}\n'.format(err))
         exit()
     ss.bind(('', local_receiver_port))
     return ss
 
 ### Put filedata
 def put_filedata(filename, filedata):
-    print ("[R] Writing results into {}".format(filename))
+    print("[R]: Writing results into {}".format(filename))
     f = open(filename, 'w')
     f.write(filedata)
     f.close()
@@ -242,7 +248,7 @@ def receiver(ss, ooo_enabled):
         data_from_sender, sender_addr = lossy_recvfrom(
             ss, MAX_CHUNK_SIZE)
         msg = Msg.deserialize(data_from_sender)
-        print ("[R] Received    {}".format(str(msg)))
+        print("[R]: Received    {}".format(str(msg)))
         ack_msg = construct_ack(msg)
         return msg, ack_msg, sender_addr
 
@@ -253,7 +259,7 @@ def receiver(ss, ooo_enabled):
     try:
         total_bytes = int(msg.msg)
     except:
-        print ("[R] Error: File length invalid! quitting.")
+        print("[R]: Error: File length invalid! quitting.")
         ss.close()
         exit(-1)
 
@@ -284,7 +290,7 @@ def receiver(ss, ooo_enabled):
                     output += new_data
                     ooo_data.pop(new_ack_num)
                     new_ack_num += len(new_data)
-                    print ("[R] Plugged a hole in seq space"
+                    print("[R]: Plugged a hole in seq space"
                            " up to seq {}".format(
                                new_ack_num))
             # cumulative ACK (last_acked) must reflect
@@ -293,23 +299,23 @@ def receiver(ss, ooo_enabled):
         elif last_acked < msg.seq:
             # Uncommon case 2: fresh data that creates a
             # hole in the sequence space.
-            print ("[R] Fresh data creating seq space hole")
+            print("[R]: Fresh data creating seq space hole")
             if not ooo_enabled:
                 output += msg.msg
             else:
-                print ("[R] Sending dup ACK")
+                print("[R]: Sending dup ACK")
                 ooo_data[msg.seq] = msg.msg
         elif last_acked > last_seq_in_msg:
             # Retransmitted data that receiver has already
             # seen. Previously sent ACKs may have been
             # dropped. last_acked remains unchanged.
-            print ("[R] Spurious retransmission of data"
+            print("[R]: Spurious retransmission of data"
                    " already at the receiver")
-            print ("[R] Sending dup ACK")
+            print("[R]: Sending dup ACK")
         else:
             # partially fresh and partially retransmitted
             # data. We're not handling this case.
-            print ("[R] Error: Receiver cannot handle mix of"
+            print("[R]: Error: Receiver cannot handle mix of"
                    " fresh and retransmitted data.")
             exit(-1)
         if ooo_enabled: # Use cumulative ACKs
@@ -338,4 +344,4 @@ if __name__ == "__main__":
     output = receiver(ss, args['ooo_enabled'])
     ss.close()
     put_filedata(args['outfile'], output)
-    print("[R] Receiver finished downloading file data.")
+    print("[R]: Receiver finished downloading file data.")
