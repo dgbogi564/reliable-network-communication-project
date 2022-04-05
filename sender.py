@@ -57,7 +57,7 @@ class Msg:
                        int(parts[1]),
                        '|'.join(parts[3:])[1:])
         else:
-            print("[S] Error in deserializing into Msg object.")
+            print("[S]: Error in deserializing into Msg object.")
             exit(-1)
 
 ### Helper methods.
@@ -67,14 +67,14 @@ def init_socket(receiver_binding):
         cs = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         print("[S]: Sender socket created")
     except socket.error as err:
-        print('socket open error: {} \n'.format(err))
+        print('[S]: Socket open error: {} \n'.format(err))
         exit()
     return cs
 
 #### Slurp a file into a single string.
 #### Warning: do not use on very large files
 def get_filedata(filename):
-    print ("[S] Transmitting file {}".format(filename))
+    print("[S]: Transmitting file {}".format(filename))
     f = open(filename, 'r')
     filedata = f.read()
     f.close()
@@ -147,7 +147,7 @@ def send_reliable(cs, filedata, receiver_binding, win_size):
                 cs.sendto(
                     m.serialize(),
                     receiver_binding)
-                print ("[S] Transmitted {}".format(str(m)))
+                print("[S]: Transmitted {}".format(str(m)))
                 latest_tx += len(msg)
             else:
                 break
@@ -164,29 +164,20 @@ def send_reliable(cs, filedata, receiver_binding, win_size):
         msg = messages[index]
         m = Msg(win_left_edge, __ACK_UNUSED, msg)
         cs.sendto(m.serialize(), receiver_binding)
-        print ("[S] Transmitted {}".format(str(m)))
+        print("[S]: Transmitted {}".format(str(m)))
         return win_left_edge + len(msg)
 
     # TODO: This is where you will make your changes. You
     # will not need to change any other parts of this file.
     cs.settimeout(RTO)
-    max_retries, retries = 2, -1
     while win_left_edge < INIT_SEQNO + content_len:
         try:
-            # MAX_CHUNK_SIZE only defined in reciever.py
-            # Need to make sure both sizes correlate
-            # TODO remove max_retries for submission
             (data, sender) = cs.recvfrom(18)
             msg = Msg.deserialize(data)
-            print("[S] Received    {}".format(str(msg)))
+            print("[S]: Received    {}".format(str(msg)))
             win_left_edge = msg.ack
-            retries = -1
         except socket.timeout:
-            retries += 1
             pass
-        if retries > max_retries:
-            print("[S] Max retries exceeded.")
-            exit(-1)
         if win_left_edge < INIT_SEQNO + content_len:
             transmit_one()
 
@@ -198,4 +189,4 @@ if __name__ == "__main__":
     send_reliable(cs, filedata, receiver_binding,
                   args['winsize'])
     cs.close()
-    print("[S] Sender finished all transmissions.")
+    print("[S]: Sender finished all transmissions.")
