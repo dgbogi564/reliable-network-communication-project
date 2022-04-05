@@ -71,7 +71,7 @@ class Msg:
                        int(parts[1]),
                        '|'.join(parts[3:])[1:])
         else:
-            print("Error in deserializing into Msg object.")
+            print("[R] Error in deserializing into Msg object.")
             exit(-1)
 
 ## Helper methods.
@@ -215,7 +215,7 @@ def lossy_sendto(ss, msg, sender_addr):
     loss = ack_loss_verdict()
     if not loss:
         ss.sendto(msg.serialize(), sender_addr)
-        print ("Transmitted {}".format(str(msg)))
+        print ("[R] Transmitted {}".format(str(msg)))
         
 ### Init socket
 def init_socket(local_receiver_port):
@@ -223,7 +223,7 @@ def init_socket(local_receiver_port):
         ss = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         print("[R]: Receiver socket created")
     except socket.error as err:
-        print('socket open error: {}\n'.format(err))
+        print('[R] socket open error: {}\n'.format(err))
         exit()
     ss.bind(('', local_receiver_port))
     return ss
@@ -242,7 +242,7 @@ def receiver(ss, ooo_enabled):
         data_from_sender, sender_addr = lossy_recvfrom(
             ss, MAX_CHUNK_SIZE)
         msg = Msg.deserialize(data_from_sender)
-        print ("Received    {}".format(str(msg)))
+        print ("[R] Received    {}".format(str(msg)))
         ack_msg = construct_ack(msg)
         return msg, ack_msg, sender_addr
 
@@ -253,7 +253,7 @@ def receiver(ss, ooo_enabled):
     try:
         total_bytes = int(msg.msg)
     except:
-        print ("Error: File length invalid! quitting.")
+        print ("[R] Error: File length invalid! quitting.")
         ss.close()
         exit(-1)
 

@@ -57,7 +57,7 @@ class Msg:
                        int(parts[1]),
                        '|'.join(parts[3:])[1:])
         else:
-            print("Error in deserializing into Msg object.")
+            print("[S] Error in deserializing into Msg object.")
             exit(-1)
 
 ### Helper methods.
@@ -147,7 +147,7 @@ def send_reliable(cs, filedata, receiver_binding, win_size):
                 cs.sendto(
                     m.serialize(),
                     receiver_binding)
-                print ("Transmitted {}".format(str(m)))
+                print ("[S] Transmitted {}".format(str(m)))
                 latest_tx += len(msg)
             else:
                 break
@@ -164,7 +164,7 @@ def send_reliable(cs, filedata, receiver_binding, win_size):
         msg = messages[index]
         m = Msg(win_left_edge, __ACK_UNUSED, msg)
         cs.sendto(m.serialize(), receiver_binding)
-        print ("Transmitted {}".format(str(m)))
+        print ("[S] Transmitted {}".format(str(m)))
         return win_left_edge + len(msg)
 
     # TODO: This is where you will make your changes. You
@@ -176,17 +176,16 @@ def send_reliable(cs, filedata, receiver_binding, win_size):
             # MAX_CHUNK_SIZE only defined in reciever.py
             # Need to make sure both sizes correlate
             # TODO remove max_retries for submission
-            (data, sender) = cs.recvfrom(100)
-            print("data size in bytes: {}".format(len(data)))
+            (data, sender) = cs.recvfrom(18)
             msg = Msg.deserialize(data)
-            print("Received    {}".format(str(msg)))
+            print("[S] Received    {}".format(str(msg)))
             win_left_edge = msg.ack
             retries = -1
         except socket.timeout:
             retries += 1
             pass
-        if retries + 1 > max_retries:
-            print("Max retries exceeded.")
+        if retries > max_retries:
+            print("[S] Max retries exceeded.")
             exit(-1)
         if win_left_edge < INIT_SEQNO + content_len:
             transmit_one()
