@@ -170,9 +170,10 @@ def send_reliable(cs, filedata, receiver_binding, win_size):
     # TODO: This is where you will make your changes. You
     # will not need to change any other parts of this file.
     cs.settimeout(RTO)
+    transmit_one()
     while win_left_edge < INIT_SEQNO + content_len:
         try:
-            (data, sender) = cs.recvfrom(18)
+            (data, sender) = cs.recvfrom(100)
             msg = Msg.deserialize(data)
             print("[S]: Received    {}".format(str(msg)))
             win_left_edge = msg.ack
