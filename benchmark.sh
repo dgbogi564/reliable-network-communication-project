@@ -1,7 +1,7 @@
 port=50007
 
 # No loss
-python3 receiver.py --port $port --pktloss everyn --pktlossN 2 > /dev/null &
+python3 receiver.py --port $port --pktloss noloss --ackloss noloss > /dev/null &
 R=$!
 
 sleep 0.1s
