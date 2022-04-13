@@ -169,38 +169,16 @@ def send_reliable(cs, filedata, receiver_binding, win_size):
 
     # TODO: This is where you will make your changes. You
     # will not need to change any other parts of this file.
-    
-    #preliminaries
-    last_acked = 0
-    first_to_tx = 0
-    final_ack = INIT_SEQNO + content_len
-
-    #send window of packets
-    first_to_tx = transmit_entire_window_from(win_left_edge)
-
+    cs.settimeout(RTO)
     while win_left_edge < INIT_SEQNO + content_len:
-        readable, _, _ = select.select([cs], [], [], RTO)
-
-        if readable:
-            (data, sender) = cs.recvfrom(100)
+        try:
+            (data, sender) = cs.recvfrom(18)
             msg = Msg.deserialize(data)
             print("[S]: Received    {}".format(str(msg)))
-            
-            if msg.ack > last_acked: #update last ack to highest ack num
-                last_acked = msg.ack
-
-                #update window
-                win_left_edge = last_acked
-                win_right_edge = min(win_left_edge + win_size,
-                         INIT_SEQNO + content_len)
-                
-                #check if there is more data to transmit
-                if win_right_edge <= final_ack:
-                    first_to_tx = transmit_entire_window_from(first_to_tx)
-                    
-            if last_acked == final_ack:
-                break #all required acks received
-        else: #timeout
+            win_left_edge = msg.ack
+        except socket.timeout:
+            pass
+        if win_left_edge < INIT_SEQNO + content_len:
             transmit_one()
 
 if __name__ == "__main__":
