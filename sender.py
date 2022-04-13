@@ -170,13 +170,12 @@ def send_reliable(cs, filedata, receiver_binding, win_size):
     # TODO: This is where you will make your changes. You
     # will not need to change any other parts of this file.
     
+    #send length of file
+    first_to_tx = transmit_one()
+    
     #preliminaries
     last_acked = 0
-    first_to_tx = 0
     final_ack = INIT_SEQNO + content_len
-
-    #send window of packets
-    first_to_tx = transmit_entire_window_from(win_left_edge)
 
     while win_left_edge < INIT_SEQNO + content_len:
         readable, _, _ = select.select([cs], [], [], RTO)
@@ -185,7 +184,7 @@ def send_reliable(cs, filedata, receiver_binding, win_size):
             (data, sender) = cs.recvfrom(100)
             msg = Msg.deserialize(data)
             print("[S]: Received    {}".format(str(msg)))
-            
+            print("msg ack", msg.ack)
             if msg.ack > last_acked: #update last ack to highest ack num
                 last_acked = msg.ack
 
